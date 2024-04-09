@@ -1,0 +1,59 @@
+-- Question 1
+SELECT CustomerID,DataUsedGB from customerusage
+WHERE DataUsedGB > (SELECT avg(DataUsedGB) from customerusage);
+
+-- Question 2
+SELECT customerid,c.month,c.year,SUM(callduration) from customerinteractions as c
+GROUP BY customerID,c.month,c.year with rollup;
+
+-- Question 3
+
+SELECT customerid,c.month,c.year,SUM(MessageCount),SUM(DataUsed) from customerinteractions as c
+GROUP BY customerID,c.month,c.year with rollup;
+
+--Question 4
+SELECT ProductTypeID,SUM(TotalSalesAmount) as TOTAL
+FROM quarterlysales
+GROUP BY ProductTypeID
+HAVING ProductTypeID=1;
+
+--Question 5
+SELECT ProductTypeID,sum(TotalSalesAmount) as TOTAL
+FROM quarterlysales
+WHERE Quarter="Q1" AND YEAR="2024"
+GROUP BY ProductTypeID
+order by total DESC limit 1;
+
+--Question 6
+SELECT ProductTypeID,sum(TotalSalesAmount) as TOTAL
+FROM quarterlysales
+WHERE Quarter="Q1" AND YEAR="2024"
+GROUP BY ProductTypeID
+order by total DESC limit 1;
+
+-- Question 7
+SELECT region from sectorenergyconsumption AS s
+WHERE s.Month ="March" AND s.Year=2024 AND s.ConsumptionKWh > (SELECT avg(ConsumptionKWh) from sectorenergyconsumption);
+
+--Question 8
+SELECT region,s.month,s.year,SUM(ConsumptionKWh) from sectorenergyconsumption AS s
+group by region,s.month,s.year with rollup;
+
+--Question 9
+SELECT s.EnergySource,s.month,s.year,sum(ConsumptionKWH) from sectorenergyconsumption AS s
+WHERE s.month="February" AND s.year="2024"
+group by EnergySource ,s.month,s.year with rollup;
+
+-- Question 10
+SELECT CustomerName from insuranceactivities
+WHERE Investigation="No" AND ((FeedbackScore > (SELECT avg(FeedbackScore) from insuranceactivities))
+OR (ClaimsCount > (SELECT avg(ClaimsCount) from insuranceactivities)));
+
+-- Question 11
+SELECT SUM(AnnualPremium) from insuranceactivities
+WHERE Investigation="No" AND ((FeedbackScore > (SELECT avg(FeedbackScore) from insuranceactivities))
+OR (ClaimsCount > 1));
+
+--Question 12
+NA
+
