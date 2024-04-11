@@ -1,0 +1,98 @@
+-- Question 1
+SELECT machine_id,sum(cost) AS main_cost
+FROM l1_maintenance_records m1
+WHERE MONTH(maintenance_date)=3 AND year(maintenance_date)=2024
+group by machine_id
+having main_cost > 
+(SELECT avg(cost) 
+from l1_maintenance_records m2
+WHERE MONTH(maintenance_date)=3 AND year(maintenance_date)=2024 and m2.machine_id=m1.machine_id);
+
+-- Question 2
+SELECT maintenance_type,count(maintenance_type) AS count_maintenance
+FROM l1_maintenance_records
+WHERE MONTH(maintenance_date)=3 AND year(maintenance_date)=2024
+group by maintenance_type
+order by count_maintenance DESC
+LIMIT 1;
+
+-- Question 3
+SELECT technician_name,AVG(cost) as average_cost_per_task,count(maintenance_type) as no_of_tasks
+FROM l1_maintenance_records
+WHERE MONTH(maintenance_date)=3 AND year(maintenance_date)=2024
+group by technician_name
+ORDER BY no_of_tasks,average_cost_per_task DESC;
+
+-- Question 4
+SELECT product_id,AVG(incident_count_pre_update-incident_count_post_update) as Average_reduction
+FROM l2_updates
+GROUP BY product_id;
+
+
+-- Question 5
+-- Reduction in incident count can also be a good criterion for improvement measure.This question has the   userfeedback score as the measure for improvement
+
+SELECT update_id
+FROM l2_updates
+ORDER BY user_feedback_score DESC
+LIMIT 1;
+
+-- Question 6
+-- Calculating percentage inorder to know the actual improvement
+SELECT update_id,((incident_count_pre_update-incident_count_post_update)/incident_count_pre_update)*100 AS reduction_in_incidents
+FROM l2_updates
+ORDER BY reduction_in_incidents ;
+ Plan:
+U004 showing only 20 percent reduction in incident counts which is very less.Very important to review the software and test it to reduce even more for updates.Support team need to be called for insights 
+ 
+-- Question 7
+SELECT p.patient_name,v.visit_date,f.facility_name,v.reason_for_visit,t.outcome
+FROM l3_patients p
+JOIN l3_visits v ON p.patient_id = v.patient_id
+JOIN l3_treatments t ON v.visit_id= t.visit_id
+JOIN l3_facilities f ON v.facility_id=f.facility_id
+WHERE MONTH(v.visit_date)=3 AND YEAR(v.visit_date)=2024;
+
+
+-- Question 8
+SELECT f.facility_name,count(v.visit_id) as count_of_visits
+FROM l3_visits v 
+JOIN l3_facilities f ON v.facility_id=f.facility_id
+WHERE v.reason_for_visit="Emergency" AND MONTH(v.visit_date)=3 AND YEAR(v.visit_date)=2024
+GROUP BY f.facility_name
+ORDER BY count_of_visits DESC
+limit 1;
+
+-- Question 9
+SELECT p.insurance_provider,COUNT(t.outcome) AS number_of_visits
+FROM l3_patients p
+JOIN l3_visits v ON p.patient_id = v.patient_id
+JOIN l3_treatments t ON v.visit_id= t.visit_id
+WHERE quarter(v.visit_date)=1 AND YEAR(v.visit_date)=2024 AND t.outcome="Complicated"
+GROUP BY p.insurance_provider;
+
+-- Question 10
+NA
+
+-- Question 11
+CREATE view sales_view as
+SELECT *,SUM(s.quantity*p.price) From l4_sales s
+JOIN l4_stores t 
+ON s.store_id=t.store_id
+JOIN l4_products p ON 
+s.product_id= p.product_id
+GROUP BY t.region;
+
+select SUM(s.quantity*p.price) as total from sales_view
+WHERE quarter(s.sale_date)=1 AND YEAR(s.sale_date)=2024
+ORDER BY total DESC
+LIMIT 1;
+
+-- Question 12
+SELECT t.region FROM l4_products AS p
+FULL JOIN  l4_sales as s 
+ON p.product_id=s.product_id
+FULL JOIN l4_stores t
+on s.store_id=t.store_id
+WHERE MONTH(s.sale_date)=3 AND year(s.sale_date)=2024 
+GROUP BY t.region;
