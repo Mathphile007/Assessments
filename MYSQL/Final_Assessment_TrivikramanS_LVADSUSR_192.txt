@@ -1,0 +1,191 @@
+-- LAB 1
+
+-- Question 1
+SELECT P.product_category,AVG(S.sales_amount) as avg_sales
+FROM products P
+JOIN sales_records S
+ON P.product_id=S.product_id
+WHERE S.sales_date> DATE_SUB((SELECT MAX(sales_date) FROM sales_records)
+,INTERVAL 1 month)
+GROUP BY p.product_category;
+
+-- Question 2
+SELECT S.product_id AS product,SUM(S.sales_amount) AS revenue,
+RANK()OVER(ORDER BY SUM(S.sales_amount) DESC) as rnk
+FROM products P
+JOIN sales_records S
+ON P.product_id=S.product_id
+WHERE year(s.sales_date)=2024
+GROUP BY S.product_id
+LIMIT 3;
+
+-- Question 3
+SELECT customer,revenue,
+RANK() OVER(ORDER BY percent_contribution DESC) AS rnk
+FROM
+(SELECT S.customer_id AS customer,SUM(S.sales_amount) AS revenue,
+SUM(S.sales_amount)/(SELECT SUM(sales_amount) as total FROM  sales_records) as percent_contribution
+FROM products P
+JOIN sales_records S
+ON P.product_id=S.product_id
+GROUP BY S.customer_id) as X;
+
+-- Question 4
+SELECT s.customer_id,
+CASE WHEN 
+(SELECT COUNT(*)
+      FROM sales_records
+      WHERE sales_date > DATE_SUB((SELECT max(sales_date) from sales_records),INTERVAL 6 MONTH)
+      AND customer_id =s.customer_id)>=4 then "CONSISTENT"
+else
+     "occasional"
+END AS purchase_behaviour
+FROM sales_records s;
+
+-- Lab 2
+
+-- Question 5
+SELECT CONCAT(departure_airport," TO ",arrival_airport) as flight_routes,
+AVG(base_price)
+FROM Flights
+GROUP BY flight_routes;
+
+-- Question 6
+SELECT DISTINCT x.flight_id,F.departure_date,x.tickets_sold
+FROM Tickets t JOIN Flights F
+ON t.flight_id=F.flight_id
+JOIN
+(SELECT flight_id,COUNT(passenger_id) as tickets_sold
+FROM Tickets
+GROUP BY flight_id) AS X
+ON t.flight_id=X.flight_id
+ORDER BY x.tickets_sold;
+
+-- Question 7
+SELECT p.passenger_name,p.frequent_flyer_status,SUM(t.ticket_price) as total
+FROM passengers p
+JOIN tickets t
+ON p.passenger_id=t.passenger_id
+GROUP BY p.passenger_name,p.frequent_flyer_status
+ORDER BY total DESC
+limit 5;
+
+-- Question 8
+SELECT MONTH(ticket_date) as month,COUNT(ticket_id) as no_of_tickets_sold,SUM(ticket_price) as total_spend
+FROM tickets 
+GROUP BY month
+ORDER BY no_of_tickets_sold DESC
+limit 1;
+
+-- Lab 3
+
+-- Question 9
+SELECT p.player_id,g.game_genre,avg(p.play_time) 
+FROM Games g 
+JOIN PlayerScores p
+ON g.game_id=p.game_id
+GROUP BY p.player_id,g.game_genre
+ORDER BY avg(p.play_time) DESC;
+
+-- Question 10
+SELECT g.game_name,COUNT(distinct p.player_id) as no_of_players
+FROM Games g
+join playerscores p
+ON g.game_id=p.game_id
+GROUP BY g.game_name
+ORDER BY no_of_players DESC
+LIMIT 3;
+
+-- Question 11
+SELECT g.game_name,Avg(p.score) as avg_score,MAX(p.score) as highest_score,COUNT(distinct p.player_id) as no_of_players
+FROM Games g
+join playerscores p
+ON g.game_id=p.game_id
+GROUP BY g.game_name
+ORDER BY no_of_players DESC
+
+-- Question 12
+SELECT p.player_name,p.registration_date,s.play_date
+FROM players p
+JOIN playerscores s
+ON p.player_id=s.player_id
+WHERE s.play_date < DATE_SUB(
+(SELECT MAX(play_date) FROM playerscores),INTERVAL 30 DAY);
+
+-- Lab 4
+-- Question 13
+SELECT d.doctor_id,d.doctor_name,SUM(t.cost) as cost
+FROM doctors d
+join treatments t
+ON d.doctor_id=t.doctor_id
+GROUP BY d.doctor_id,d.doctor_name
+ORDER BY cost desc;
+
+-- Question 14
+SELECT treatment_name,SUM(cost) as Revenue,ROUND(SUM(cost)/(SELECT SUM(cost) from treatments) *100,2) as percent_contribution
+FROM treatments
+GROUP BY treatment_name
+ORDER BY Revenue DESC;
+
+-- Question 15
+WITH intital_table as
+(SELECT p1.patient_id,p1.patient_name,p1.admission_date,p1.discharge_date
+FROM patients p1
+ORDER BY patient_id)
+
+SELECT p1.patient_id,p1.patient_name,p1.admission_date,p1.discharge_date,
+LAG(discharge_date) over()-p1.admission_date as diff 
+FROM initial_table
+GROUP BY p1.patient_id
+HAVING diff<30;
+
+
+-- Question 16
+SELECT gender,ROUND(AVG((discharge_date-admission_date)),2) as LOS
+FROM Patients
+GROUP BY gender;
+
+SELECT diagnosis,ROUND(AVG((discharge_date-admission_date)),2) as LOS
+FROM Patients
+GROUP BY diagnosis;
+
+
+-- Lab 6
+-- Question 17
+SELECT c.department,e.semester,avg(e.grade)
+FROM Courses c
+join enrollments e
+on c.course_id=e.course_id
+GROUP BY c.department,e.semester
+ORDER BY c.department,e.semester;
+
+-- Question 18
+SELECT major,enrollment_year,COUNT(e.student_id) AS no_of_students
+FROM students s
+JOIN enrollments e
+ON s.student_id=e.student_id
+group by major,enrollment_year
+order by no_of_students DESC;
+
+-- Question 19
+SELECT s.student_id,s.student_name,e.semester,SUM(c.credits) as total_no_of_credits
+FROM students s
+JOIN enrollments e
+ON s.student_id=e.student_id
+JOIN courses c
+ON e.course_id=c.course_id
+GROUP BY s.student_id,s.student_name,e.semester
+HAVING total_no_of_credits >50;
+
+
+-- Question 20
+SELECT * FROM
+(SELECT s.enrollment_year,c.course_id,c.course_name,COUNT(e.student_id),
+row_number() over(Partition by s.enrollment_year order by COUNT(e.student_id) DESC) AS rnk
+FROM courses c
+join enrollments e
+ON c.course_id=e.course_id
+join students s
+ON e.student_id=s.student_id
+GROUP BY s.enrollment_year,c.course_id,c.course_name) X
+WHERE X.rnk<=3;
